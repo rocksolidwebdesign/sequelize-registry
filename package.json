@@ -1,6 +1,6 @@
 {
   "name": "sequelize-registry",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A helper for setting up Sequelize models and their associations while avoiding issues with circular dependencies.",
   "main": "index.js",
   "scripts": {
