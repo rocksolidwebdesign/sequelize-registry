@@ -1,3 +1,4 @@
+var VERBOSITY;
 var fs = require('fs');
 var path = require('path');
 
@@ -7,6 +8,12 @@ var knownAssociationTypes = [
   'belongsTo',
   'belongsToMany',
 ];
+
+function verbosityLog(msg) {
+  if (VERBOSITY) {
+    console.log(msg);
+  }
+}
 
 function getModelFilePaths(modelsDir) {
   var dirPath = path.normalize(modelsDir);
@@ -24,7 +31,7 @@ function validateRef(ref) {
   );
 
   if (!isValid) {
-    console.log("Invalid reference specification. Refernces must be objects.");
+    verbosityLog("Invalid reference specification. Refernces must be objects.");
     return;
   }
 
@@ -35,7 +42,7 @@ function validateRef(ref) {
   );
 
   if (!isValidType) {
-    console.log("Invalid association type. Must be one of: " + knownAssociationTypes.join(', '));
+    verbosityLog("Invalid association type. Must be one of: " + knownAssociationTypes.join(', '));
     return;
   }
 
@@ -45,7 +52,7 @@ function validateRef(ref) {
   );
 
   if (!isValidModelName) {
-    console.log("Missing model name.");
+    verbosityLog("Missing model name.");
     return;
   }
 
@@ -57,7 +64,7 @@ function validateRef(ref) {
   );
 
   if (!isValidConfig) {
-    console.log("Invalid ref config options. ref.config must be an object with standard sequelize properties.");
+    verbosityLog("Invalid ref config options. ref.config must be an object with standard sequelize properties.");
     return;
   }
 
@@ -76,11 +83,11 @@ function configureAssociations(sequelize, sourceModel, refs) {
       targetModel = sequelize.model(ref.model);
     }
     catch(e) {
-      console.log(`    Relation (${ref.model}) not found`);
+      verbosityLog(`    Relation (${ref.model}) not found`);
     }
 
     if (targetModel) {
-      console.log(`    Configuring ${ref.type}(${ref.model}) association`);
+      verbosityLog(`    Configuring ${ref.type}(${ref.model}) association`);
 
       var relateTo = ref.type;
       var settings = ref.config || {};
@@ -91,11 +98,13 @@ function configureAssociations(sequelize, sourceModel, refs) {
 }
 
 function defineModel(sequelize, def) {
-  console.log(`DEFINING ${def.name} MODEL`);
+  verbosityLog(`DEFINING ${def.name} MODEL`);
   sequelize.define(def.name, def.cols, def.opts);
 }
 
-function defineModels(sequelize, modelsDir) {
+function defineModels(sequelize, modelsDir, isVerbose) {
+  VERBOSITY = isVerbose || false;
+
   var modelPaths = getModelFilePaths(modelsDir);
 
   var defs = modelPaths.map(function(modelPath) {
@@ -106,7 +115,7 @@ function defineModels(sequelize, modelsDir) {
     defineModel(sequelize, def);
   });
 
-  console.log('');
+  verbosityLog('');
 
   defs.forEach(function(def) {
     var hasRefs = (
@@ -121,13 +130,13 @@ function defineModels(sequelize, modelsDir) {
         sourceModel = sequelize.model(def.name);
       }
       catch(e) {
-        console.log(`    Source (${ref.model}) not found`);
+        verbosityLog(`    Source (${ref.model}) not found`);
       }
 
       if (sourceModel) {
-        console.log(`CONFIGURING ${def.name} ASSOCIATIONS`);
+        verbosityLog(`CONFIGURING ${def.name} ASSOCIATIONS`);
         configureAssociations(sequelize, sourceModel, def.refs);
-        console.log('');
+        verbosityLog('');
       }
     }
   });
